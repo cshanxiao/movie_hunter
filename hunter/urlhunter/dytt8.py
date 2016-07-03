@@ -5,7 +5,7 @@ u'''
 @date: 2016年7月3日
 '''
 import os
-import threading
+import uuid
 
 from bs4 import BeautifulSoup
 import requests
@@ -13,8 +13,6 @@ import requests
 from hunter.log.logconfig import dytt8log as log
 from hunter.urlhunter.ispider import ISpider
 
-
-file_lock = threading.Lock()
 
 class Dytt8Spider(ISpider):
 
@@ -43,25 +41,25 @@ class Dytt8Spider(ISpider):
             
     def _parse_list(self, content):
         page_urls = []
-        with file_lock:
-            with open("./tmp.txt", "w") as fd:
-                fd.write(content)
+        file_name = "./tmp_%s.txt" % str(uuid.uuid4())
+        with open(file_name, "w") as fd:
+            fd.write(content)
         
-            with open("./tmp.txt", "r") as fd:
-                for line in fd.readlines():
-                    line = line.strip()
-                    if not "option" in line:
-                        continue
-                    
-                    try:
-                        tag_option = BeautifulSoup(line, "lxml")
-                        page = int(tag_option.text)
-                        url = tag_option.body.option["value"]
-                        log.info("page: %s, url: %s", page, url)
-                        page_urls.append([page, url])
-                    except:
-                        pass
-            os.remove("./tmp.txt")
+        with open(file_name, "r") as fd:
+            for line in fd.readlines():
+                line = line.strip()
+                if not "option" in line:
+                    continue
+                
+                try:
+                    tag_option = BeautifulSoup(line, "lxml")
+                    page = int(tag_option.text)
+                    url = tag_option.body.option["value"]
+                    log.info("page: %s, url: %s", page, url)
+                    page_urls.append([page, url])
+                except:
+                    pass
+        os.remove(file_name)
         return page_urls
         
     def parse_movie_list(self, movie_type, url):
