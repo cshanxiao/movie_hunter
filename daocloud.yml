@@ -1,28 +1,26 @@
 version: 2.0
 
-test:
-  image: daocloud/ci-python:2.7
+image: daocloud/ci-python:2.7
+services:
+  - mysql
+  - mongodb
+  - redis
+  - rabbitmq
   
-  services:
-    - mysql
-    - redis
-    - mongodb
-
-  env:
-    - MYSQL_USERNAME="root"
-    - MYSQL_PASSWORD="root"
-    - MYSQL_INSTANCE_NAME="movies"
+env:
+  - DEBUG = "True"
+  - DATABASE_URI = "mysql://root:@mysql:3306/movie"
+  - MONGO_MOVIE_CORE = "mongodb://mongodb:27017/movie"
+  - REDIS_URL = "redis://redis:6379/0"
+  - EVENT_QUEUE = "amqp://guest:guest@rabbitmq:5672/%2f"
+  - SDK_OPS_LOG_MQ = "amqp://guest:guest@rabbitmq:5672/%2f"
+  - LOG_GRAYLOG = '{"level":"INFO","class":"logging.StreamHandler","formatter":"standard"}'
   
-#  script:
-#    - pip install -r requirements.txt
-#    - nosetests test.py --with-xunit --xunit-file=$TEST_RESULT
-#    - coverage run --branch test.py
-#    - coverage xml -o $TEST_COVERAGE test.py
-#    - cat $TEST_RESULT
-#    - cat $TEST_COVERAGE
-
-build:
-  image:
-    dockerfile_path: Dockerfile
-    build_dir: /
-    cache: true
+install:
+  - pip install -r requirements.txt
+  
+before_script:
+  - mysql -h mysql -u root -e "create database movie default character set utf8;"
+  
+script:
+  - python main.py
